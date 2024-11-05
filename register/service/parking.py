@@ -1,4 +1,3 @@
-from datetime import datetime
 import random
 from datetime import datetime
 
@@ -72,18 +71,3 @@ def set_outtime(db: Session, pno: int):
 
     parking.outtime = datetime.now()
     db.commit()
-
-# 차량 정보 출력
-# total_time = parking.outtime - parking.intime
-# total_minutes = total_time.total_seconds() / 60
-#
-# rate_10min = 1500       # 회차시간 15분 / 10분당 1500원
-# total_fee = int((max(0, total_minutes - 15) / 10) * rate_10min)
-#
-# return {
-#     "carnum": parking.carnum,
-#     "intime": parking.intime,
-#     "outtime": parking.outtime,
-#     "total_minutes": total_minutes,
-#     "total_fee": total_fee
-# }
