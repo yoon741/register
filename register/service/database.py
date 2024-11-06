@@ -12,8 +12,7 @@ DB_USER = os.getenv('MYSQL_USER')
 DB_PASSWORD = os.getenv('MYSQL_PASSWORD')
 DB_HOST = os.getenv('MYSQL_HOST')
 DB_NAME = os.getenv('MYSQL_DATABASE')
-# DB_PORT = os.getenv('MYSQL_PORT')
-DB_PORT = 3306
+DB_PORT = os.getenv('MYSQL_PORT')
 
 logging.info(f"DB_USER: {DB_USER}, DB_PASSWORD: {DB_PASSWORD}, DB_HOST: {DB_HOST}, DB_NAME: {DB_NAME}, DB_PORT: {DB_PORT}")
 
@@ -30,8 +29,8 @@ def create_tables():
         logging.error("Error creating tables: %s", e)
 
 def get_db():
-    with SessionLocal() as db:
-        try:
-            yield db
-        finally:
-            db.close()
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()  # 세션을 안전하게 닫아 자원을 해제합니다.

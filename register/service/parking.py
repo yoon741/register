@@ -3,40 +3,20 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, text
-from models.parking import Parking, Parkseat
+from models.parking import Parking, Parkseat, Payment
 from schema.parking import ParkingBase
 from service.database import db_url
 
 engine = create_engine(db_url, echo=True)
 
-def create_triggers():
-    # 결제완료 시 payment 테이블에 저장 된 paydate에 값이 채워지면
-    # parkseat에 동일한 carnum 데이터 삭제
-    trigger_sql_payment = """
-    CREATE TRIGGER IF NOT EXISTS remove_parkseat
-    AFTER INSERT ON payment
-    FOR EACH ROW
-    BEGIN
-        DELETE FROM parkseat WHERE carnum = NEW.carnum;
-    END;
-    """
-
-    with engine.connect() as connection:
-        # 결제 트리거가 존재하는지 확인 후 생성
-        existing_trigger_payment = connection.execute(
-            text("SELECT name FROM sqlite_master WHERE type='trigger' AND name='remove_parkseat'")
-        ).fetchone()
-
-        if not existing_trigger_payment:
-            connection.execute(text(trigger_sql_payment))
-
 # parknum 랜덤 할당 함수
 def random_parknum(db: Session) -> int:
-    existing_parknums = {row[0] for row in db.query(Parkseat.parknum).all()}  # 이미 저장되어있는 parknum 값을 따로 정의
-    return random.choice([num for num in range(1, 101) if num not in existing_parknums]) # 따로 정의 한 ▲ 값과 비교 한 후 없는 값을 지정
+    existing_parknums = {row[0] for row in db.query(Parkseat.parknum).all()}
+    return random.choice([num for num in range(1, 101) if num not in existing_parknums])
 
-# 차량 등록
+# 차량 등록 함수
 def register(db: Session, parking_data: ParkingBase):
+
     # parking 테이블에 저장
     parking = Parking(**parking_data.model_dump())
     db.add(parking)
@@ -49,6 +29,13 @@ def register(db: Session, parking_data: ParkingBase):
     db.add(new_parkseat)
     db.commit()
 
+    # 결제 완료 확인 후 parkseat에서 carnum 데이터 삭제
+    payment = db.query(Payment).filter(Payment.carnum == parking.carnum, Payment.paydate != None).first()
+    if payment:
+        db.query(Parkseat).filter(Parkseat.carnum == parking.carnum).delete()
+        db.commit()
+        print(f"Car {parking.carnum} removed from parkseat due to payment completion.")
+    
     return parking
 
 # 입차 내역 전부 조회
@@ -59,10 +46,9 @@ def carlists(db: Session, parknum: str):
         .filter(Parkseat.carnum.like(f"%{parknum}"))
     )
     result = query.all()
-    return [{"carnum": row[0], "intime": row[1], "pno":row[2]} for row in result]
+    return [{"carnum": row[0], "intime": row[1], "pno": row[2]} for row in result]
 
-# 출차
-# carlists에서 주차한 차를 선택해서 outregist페이지로 넘어갈 때 outtime 저장
+# 출차 함수
 def set_outtime(db: Session, pno: int):
     parking = db.query(Parking).filter(Parking.pno == pno).first()
 
