@@ -22,12 +22,11 @@ class Parkseat(Base):
     barrier = Column(String(5), nullable=False, default='0')
     parknum = Column(Integer, nullable=False)
 
-# 수정 필요
 class Payment(Base):
     __tablename__ = 'payment'
 
     payid = Column(Integer, primary_key=True, autoincrement=True)
     payment = Column(String(50))
-    paydate = Column(DateTime, nullable=True)
+    paydate = Column(DateTime, default=datetime.now)
     parkingtime = Column(String(20), nullable=True)
     carnum = Column(String(10), ForeignKey('parking.carnum'))
