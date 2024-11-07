@@ -29,14 +29,7 @@ def register(db: Session, parking_data: ParkingBase):
     db.add(new_parkseat)
     db.commit()
 
-    # 결제 완료 확인 후 parkseat에서 carnum 데이터 삭제
-    payment = db.query(Payment).filter(Payment.carnum == parking.carnum, Payment.paydate != None).first()
-    if payment:
-        db.query(Parkseat).filter(Parkseat.carnum == parking.carnum).delete()
-        db.commit()
-        print(f"Car {parking.carnum} removed from parkseat due to payment completion.")
-    
-    return parking
+
 
 # 입차 내역 전부 조회
 def carlists(db: Session, parknum: str):
@@ -48,7 +41,7 @@ def carlists(db: Session, parknum: str):
     result = query.all()
     return [{"carnum": row[0], "intime": row[1], "pno": row[2]} for row in result]
 
-# 출차 함수
+# 출차 함수 / 출차 시 parkseat 정보 삭제
 def set_outtime(db: Session, pno: int):
     parking = db.query(Parking).filter(Parking.pno == pno).first()
 
@@ -57,3 +50,8 @@ def set_outtime(db: Session, pno: int):
 
     parking.outtime = datetime.now()
     db.commit()
+    
+    db.query(Parkseat).filter(Parkseat.carnum == parking.carnum).delete()
+    db.commit()
+    print(f"Car {parking.carnum} removed from parkseat due to payment completion.")
+    
