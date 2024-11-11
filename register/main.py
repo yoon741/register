@@ -1,6 +1,7 @@
 import uvicorn
 import os
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi.middleware.cors import CORSMiddleware
 
 from routes import parking
@@ -9,6 +10,7 @@ from service.database import create_tables
 
 app = FastAPI()
 
+Instrumentator().instrument(app).expose(app)
 app.include_router(parking.router)
 
 # CORS 설정
